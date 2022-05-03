@@ -14,10 +14,16 @@ jobs:
     resource_class: bgmorton/runner-test
     steps:
       - run: echo "Hi I'm on Runners!"
+      # https://circleci.com/docs/2.0/language-javascript/#add-jobs-to-the-workflow
       - node/install:
           node-version: '16.10'
       - run: node --version
-      - run: npm run test
+      - checkout
+      - node/install-packages:
+          pkg-manager: npm
+      - run:
+          command: npm run build
+          name: Build app
      
      
  
