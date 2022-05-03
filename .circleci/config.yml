@@ -7,11 +7,6 @@ workflows:
   testing:
     jobs:
       - runner-test
-      - node/test:
-          version: '16.10'
-          pkg-manager: npm
-          machine: true
-          resource_class: bgmorton/runner-test
 
 jobs:
   runner-test:
@@ -19,4 +14,10 @@ jobs:
     resource_class: bgmorton/runner-test
     steps:
       - run: echo "Hi I'm on Runners!"
+      - node/install:
+          node-version: '16.10'
+      - run: node --version
+      - run: npm run test
+     
+     
  
