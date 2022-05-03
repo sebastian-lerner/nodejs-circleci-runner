@@ -1,7 +1,7 @@
 {
-  "name": "nodejs-circleci-openshift",
+  "name": "nodejs-circleci-runner",
   "version": "1.0.0",
-  "description": "nodejs-circleci-openshift",
+  "description": "nodejs-circleci-runner",
   "main": "app.js",
   "dependencies": {
     "fastify": "^3.27.1"
