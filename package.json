@@ -1,0 +1,20 @@
+{
+  "name": "nodejs-circleci-openshift",
+  "version": "1.0.0",
+  "description": "nodejs-circleci-openshift",
+  "main": "app.js",
+  "dependencies": {
+    "fastify": "^3.27.1"
+  },
+  "devDependencies": {
+    "pino-pretty": "^7.5.1",
+    "tap": "^15.1.6"
+  },
+  "scripts": {
+    "test": "node app.test.js",
+    "start": "node server.js",
+    "dev": "npx nodemon server.js"
+  },
+  "author": "",
+  "license": "MIT"
+}

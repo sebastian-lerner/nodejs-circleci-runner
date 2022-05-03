@@ -1,0 +1,152 @@
+version: 2.1
+
+# Orbs are reusable packages of CircleCI configuration that you may share across projects, enabling you to create encapsulated, parameterized commands, jobs, and executors that can be used across multiple projects.
+# See: https://circleci.com/docs/2.0/orb-intro/
+orbs:
+  node: circleci/node@4.7
+  docker: circleci/docker@2.0.2
+  kubernetes: circleci/kubernetes@0.3.0
+  redhat-openshift: circleci/redhat-openshift@0.2.0
+
+# Define custom jobs for this config
+# See: https://circleci.com/docs/2.0/jobs-steps/
+jobs:
+  deploy-to-cluster:
+    executor: redhat-openshift/default
+    steps:
+      - redhat-openshift/login-and-update-kubeconfig:
+          insecure-skip-tls-verify: true
+          openshift-platform-version: 4.x
+          token: $OPENSHIFT_TOKEN
+          server-address: $OPENSHIFT_SERVER
+      - run:
+          command: >
+            oc project $OPENSHIFT_PROJECT
+          name: Set active OpenShift project/namespace
+      # Otherwise the default project will be used
+      - run:
+          # Delete existing docker secret if it exists (We don't mind recreating it as the details may have changed)
+          command: >
+            oc delete secret my-docker-registry-secret
+          name: Delete existing secret
+      - run:
+          # https://docs.openshift.com/container-platform/4.6/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets
+          command: >
+            oc create secret docker-registry 
+            --docker-server=$DOCKER_SERVER 
+            --docker-username=$DOCKER_LOGIN 
+            --docker-password=$DOCKER_PASSWORD 
+            --docker-email=unused
+            my-docker-registry-secret
+          name: Create Docker secret
+      - run:
+          # https://docs.openshift.com/container-platform/4.6/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets
+          command: >
+            oc secrets link default my-docker-registry-secret --for=pull
+          name: Add secret to service account
+      - run:
+          command: |
+            cat \<<- EOF > deployment.yml
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: my-nodejs-deployment
+            spec:
+              selector:
+                matchLabels:
+                  app: my-nodejs-app
+              replicas: 2
+              # Uncomment to change update strategy
+              # strategy:
+              #   type: Recreate
+              template:
+                metadata:
+                  labels:
+                    app: my-nodejs-app
+                spec:
+                  # Uncomment this to specify which nodes to deploy to
+                  # nodeSelector:
+                  #   region: west
+                  containers:
+                  - image: $DOCKER_REPO:$DOCKER_IMAGE_NAME
+                    name: my-nodejs-app
+                    ports:
+                    - containerPort: 3000
+                    readinessProbe: 
+                      httpGet: 
+                        scheme: HTTP
+                        path: /
+                        port: 3000 
+            EOF
+          name: Create example k8s deployment yml file
+      - run:
+          command: |
+            cat \<<- EOF > service.yml
+            apiVersion: v1
+            kind: Service
+            metadata:
+              name: my-nodejs-app-service
+            spec:
+              selector:
+                app: my-nodejs-app
+              ports:
+                - port: 3000
+                  targetPort: 3000
+            EOF
+          name: Create example OpenShift service yml file
+      - run:
+          command: |
+            cat \<<- EOF > route.yml
+            apiVersion: route.openshift.io/v1
+            kind: Route
+            metadata:
+              name: my-nodejs-app-route
+            spec:
+              to:
+                kind: Service
+                name: my-nodejs-app-service
+              port:
+                targetPort: 3000
+            EOF
+          name: Create example OpenShift route yml file
+      - kubernetes/create-or-update-resource:
+          get-rollout-status: true
+          resource-file-path: deployment.yml
+          resource-name: deployment/my-nodejs-deployment
+      - run:
+          command: >
+            oc apply -f service.yml
+          name: Apply service.yml
+      - run:
+          command: >
+            oc apply -f route.yml
+          name: Apply route.yml
+
+# Invoke jobs via workflows
+# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+workflows:
+  test-image-deploy: # This is the name of the workflow, feel free to change it to better match your workflow.
+    # Inside the workflow, you define the jobs you want to run.
+    jobs:
+      - node/test:
+          # This is the node version to use for the `cimg/node` tag
+          # Relevant tags can be found on the CircleCI Developer Hub
+          # https://circleci.com/developer/images/image/cimg/node
+          version: '16.10'
+          # If you are using yarn, change the line below from "npm" to "yarn"
+          pkg-manager: npm
+      
+      - docker/publish:
+          registry: $DOCKER_SERVER
+          image: $DOCKER_REPO
+          tag: $DOCKER_IMAGE_NAME,$CIRCLE_SHA1 # tag with $DOCKER_IMAGE_NAME and the CircleCI unique SHA1 hash for this commit
+          use-docker-credentials-store: false  # env variables should be used instead, named $DOCKER_LOGIN and $DOCKER_PASSWORD
+          requires:
+            - node/test # Only deploy once the build job has completed
+          filters:
+            branches:
+              only: main # Only deploy on the main branch
+
+      - deploy-to-cluster:
+          requires:
+           - docker/publish # Only deploy once the image has been published
