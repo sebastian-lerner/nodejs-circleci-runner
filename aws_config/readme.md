@@ -207,3 +207,9 @@ You will see success or failure, and be able to debug if necessary.  If everythi
 ## Monitoring
 
 You can use the `Monitor` tab in Lambda to ensure your function is running to the schedule you have set.
+
+## Using the Runner
+
+To use this runner to run CircleCI jobs, you must add it to your [CircleCI configuration](https://circleci.com/docs/2.0/configuration-reference/#self-hosted-runner).
+
+You can see the `.circleci/config.yml` file in this repository for an example of this.

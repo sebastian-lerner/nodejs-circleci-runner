@@ -44,7 +44,7 @@ def lambda_handler(event, context):
     secrets = json.loads(get_secret(secret_name, secret_region))
     
     # Configure Runner API endpoint https://circleci.com/docs/2.0/runner-api/#endpoints
-    endpoint_url = 'https://runner.circleci.com/api/v2/runner/tasks?resource-class=' + secrets['resource_class']
+    endpoint_url = 'https://runner.circleci.com/api/v2/tasks?resource-class=' + secrets['resource_class']
     headers = {'Circle-Token': secrets['circle_token']}
 
     # Get result from API endpoint

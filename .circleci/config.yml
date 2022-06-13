@@ -1,8 +1,5 @@
 version: 2.1
 
-orbs:
-  node: circleci/node@5.0.2
-
 workflows:
   testing:
     jobs:
@@ -16,11 +13,9 @@ jobs:
       - run: echo "Hi I'm on Runners!"
       - run: node --version
       - checkout
-      - node/install-packages:
-          pkg-manager: npm
+      - run:
+          command: npm install
+          name: Install Node.js app dependencies
       - run:
           command: npm run test
           name: Test app
-     
-     
- 
