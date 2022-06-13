@@ -1,4 +1,4 @@
-# Simple CircleCI Runner AutoScaling in AWS
+# Simple CircleCI Runner Auto Scaling in AWS
 
 ## Purpose
 
