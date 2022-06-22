@@ -2,23 +2,23 @@
 
 ## Purpose
 
-This is a simple solution to scaling the number of [Circle Ci Runners](https://circleci.com/docs/2.0/runner-overview/) based on the number of jobs in the queue for that runner class.  It takes only minutes to set up.
+This is a simple solution to scaling the number of [Circle Ci runners](https://circleci.com/docs/2.0/runner-overview/) based on the number of jobs in the queue for that runner class.  It takes only minutes to set up.
 
 ## Notes about this configuration
 
-Note the short timeout time for the CircleCI Runner and the shut down command in the associated service. Unclaimed runners should be terminated quickly, and runners that have completed should also.
+Note the short timeout time for the CircleCI runner and the shut down command in the associated service. Unclaimed runners should be terminated quickly, and runners that have completed should also.
 
-Once started, instances will be largely in charge of their own lifecycle.  The Runner program will quit after a short idle time, and as the Runner is in single-task mode the service will also quit on completion (success or fail).  The runner service is configured to shut down the instance when it exits. 
+Once started, instances will be largely in charge of their own lifecycle.  The runner program will quit after a short idle time, and as the runner is in single-task mode the service will also quit on completion (success or fail).  The runner service is configured to shut down the instance when it exits. 
 
 Scale-in protection will be enabled in the Auto Scaling group to prevent instances in use from being terminated by the Auto Scaling group.
 
 This prevents the scenario where multiple jobs are running in different instances, completing out of the order they were submitted, reducing the queue depth, and having the Auto Scaling group subsequently terminate the oldest instance to match the new smaller queue - even if a job is still running on it.
 
-## Step 1: Preparing the Runner installation script
+## Step 1: Preparing the runner installation script
 
-To use CircleCI runners, you will need to set up a Runner class.  An API token will be provided which will connect your Runners to CircleCI.
+To use CircleCI runners, you will need to set up a runner class.  An API token will be provided which will connect your runners to CircleCI.
 
-This can be done by following the steps at https://circleci.com/docs/2.0/runner-installation/index.html
+This can be done by following the steps at https://circleci.com/blog/install-runner-in-five-minutes/
 
 Once completed, update the AUTH_TOKEN and RUNNER_NAME variables in the script `install_runner_ubuntu.sh`.
 
@@ -30,21 +30,21 @@ The script will be executed at boot for each instance that is created in the sca
 
 Log in to AWS and navigate to the services page for managing EC2.
 
-Go to `Launch Templates` and click `Create launch template`
+Go to `Launch Templates` and click `Create launch template`.
 
-Name your new template something sensible like `cci-runner-template`
+Name your new template something sensible like `cci-runner-template`.
 
-Check the checkbox `Provide guidance to help me set up a template that I can use with EC2 Auto Scaling`
+Check the checkbox `Provide guidance to help me set up a template that I can use with EC2 Auto Scaling`.
 
-For the `Launch template contents` AMI, select Quick Start then `Ubuntu 22.04 LTS`
+For the `Launch template contents` AMI, select Quick Start then `Ubuntu 22.04 LTS`.
 
 Select an `Instance type` - I'm using `t1.micro` as they are lightweight for testing purposes - you will need to pick one based on your requirements.
 
 Select a `Key pair` for logging in, - you may wish to log in via SSH to troubleshoot an instance.
 
-Under `Network settings` and `Security Groups`, select an existing security group or create one - it's recommended to allow only SSH from a trusted IP address, and blocking all other incoming traffic.  The CircleCI Runner polls the server for new jobs, and does not require any incoming connections.
+Under `Network settings` and `Security Groups`, select an existing security group or create one - it's recommended to allow only SSH from a trusted IP address, and blocking all other incoming traffic.  The CircleCI runner polls the server for new jobs, and does not require any incoming connections.
 
-Under `Advanced network configuration` click `Add network interface` and enable `Auto-assign public IP` for that interface
+Under `Advanced network configuration` click `Add network interface` and enable `Auto-assign public IP` for that interface.
 
 `Configure storage` - Increase the size of the hard disk for each instance if you think you'll need it.
 
@@ -58,9 +58,9 @@ You will see a success message. Scroll down and click `Create Auto Scaling group
 
 ***Be aware that the runner token api key details are stored in the launch template (as part of the runner install script), so don't share it!***
 
-## Create Auto Scaling Group
+## Create Auto Scaling group
 
-If you did not follow the `Create an Auto Scaling group from your template` link above, go to the EC2 web console, navigate to 'Auto Scaling Groups' and click 'Create Auto Scaling group'
+If you did not follow the `Create an Auto Scaling group from your template` link above, go to the EC2 web console, navigate to 'Auto Scaling groups' and click 'Create Auto Scaling group'.
 
 ### Step 1: Choose launch template or configuration
 
@@ -97,7 +97,7 @@ Review your configuration and save it click `Create Auto Scaling group`.
 
 Go to the IAM console and navigate to `Policies`.
 
-Click `Create policy` and go to the `JSON editor`, copy and paste the contents of `lambda_iam.json` into that file.  This policy will give permissions to update auto scaling groups and read secrets from the AWS secrets manager - the two permissions the Lambda function which will do the scaling requires.
+Click `Create policy` and go to the `JSON editor`, copy and paste the contents of `lambda_iam.json` into that file.  This policy will give permissions to update Auto Scaling groups and read secrets from the AWS secrets manager - the two permissions the Lambda function which will do the scaling requires.
 
 You can skip through assigning any tags.
 
@@ -125,8 +125,8 @@ Select `Other type of secret`.
 
 Add the following key value pairs:
 
-`resource_class` - The resource class for the Runner in CCI in the format username/class-name
-`circle_token` - This will be a CircleCI [personal token](https://circleci.com/docs/2.0/managing-api-tokens/) for polling the Runner API - it s not the runner token used in the installation script above.
+`resource_class` - The resource class for the runner in CCI in the format username/class-name
+`circle_token` - This will be a CircleCI [personal token](https://circleci.com/docs/2.0/managing-api-tokens/) for polling the runner API - it is not the runner token used in the installation script above.
 
 For Encryption key leave it as `aws/secretsmanager`.
 
@@ -146,11 +146,11 @@ Review and save.
 
 *There's no need to copy and paste the generated code - it's already included in the included Lambda function, but take note of the secret name and region.*
 
-Click `Store` to finish
+Click `Store` to finish.
 
 ## Create the Lambda function
 
-Go to AWS Lambda
+Go to AWS Lambda.
 
 Click `Create function`.
 
@@ -173,12 +173,12 @@ Under `Configuration` and then `Environmental variables`, edit and add the follo
     SECRET_NAME - The name of teh secret created above
     SECRET_REGION - The region of the secret above
     AUTO_SCALING_MAX - Integer value of the max number of instances to spin up
-    AUTO_SCALING_GROUP_NAME - Name of the auto scaling group
-    AUTO_SCALING_GROUP_REGION - The region of the auto scaling group
+    AUTO_SCALING_GROUP_NAME - Name of the Auto Scaling group
+    AUTO_SCALING_GROUP_REGION - The region of the Auto Scaling group
 
 Leave everything else at the default.
 
-## Trigger lambda on a schedule
+## Triggering the Lambda function on a schedule
 
 Back at the Lambda function editing screen, click `Add trigger`.
 
@@ -198,7 +198,7 @@ Click `Add` to finish setting up the scheduled trigger.
 
 Back to Lambda, to the `Code` tab, click `Deploy`.
 
-To test, go to the `Test` tab
+To test, go to the `Test` tab.
 
 Leave everything as-is (to prevent the test being saved), and simply click `Test`.
 
@@ -208,7 +208,7 @@ You will see success or failure, and be able to debug if necessary.  If everythi
 
 You can use the `Monitor` tab in Lambda to ensure your function is running to the schedule you have set.
 
-## Using the Runner
+## Using the runner
 
 To use this runner to run CircleCI jobs, you must add it to your [CircleCI configuration](https://circleci.com/docs/2.0/configuration-reference/#self-hosted-runner).
 
