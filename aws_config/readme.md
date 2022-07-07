@@ -6,7 +6,7 @@ This is a simple solution to scaling the number of [Circle Ci runners](https://c
 
 ## Notes about this configuration
 
-Note the short timeout time for the CircleCI runner and the shut down command in the associated service. Unclaimed runners should be terminated quickly, and runners that have completed should also.
+Note the short timeout time for the CircleCI runner and the `shutdown` command in the associated service. Unclaimed runners should be terminated quickly, and runners that have completed should also.
 
 Once started, instances will be largely in charge of their own lifecycle.  The runner program will quit after a short idle time, and as the runner is in single-task mode the service will also quit on completion (success or fail).  The runner service is configured to shut down the instance when it exits. 
 
