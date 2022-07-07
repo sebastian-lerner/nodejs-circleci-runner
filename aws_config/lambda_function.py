@@ -50,7 +50,7 @@ def lambda_handler(event, context):
     # Get result from API endpoint
     result = get_request(endpoint_url, headers)
 
-    # Update the auto scaling group with a desired number of instances set to the number of jobs in the queue, or the maximum, whichever is smallest
+    # Update the auto scaling group with a desired number of instances set to the number of unclaimed tasks, or the maximum, whichever is smallest
     instances_min = 0
     instances_max = int(auto_scaling_max)
     instances_desired = int(result["unclaimed_task_count"]) if int(result["unclaimed_task_count"]) < int(auto_scaling_max) else int(auto_scaling_max)
