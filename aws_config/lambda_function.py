@@ -1,6 +1,6 @@
 import json, urllib3, boto3, base64, os
 
-# This script polls the queue depth for a Circle CI runner class, and sets the parameters for an AWS Auto Scaling group 
+# This script polls the number of unclaimed tasks for a Circle CI runner class, and sets the parameters for an AWS Auto Scaling group 
 # It uses the CircleCI runner API https://circleci.com/docs/2.0/runner-api/
 # It requires the included IAM role and should be triggered every minute using an EventBridge Cron event
 

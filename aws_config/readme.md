@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This is a simple solution to scaling the number of [Circle Ci runners](https://circleci.com/docs/2.0/runner-overview/) based on the number of jobs in the queue for that runner class.  It takes only minutes to set up.
+This is a simple solution to scaling the number of [Circle Ci runners](https://circleci.com/docs/2.0/runner-overview/) based on the number of unclaimed tasks for that runner class.  It takes only minutes to set up.
 
 ## Notes about this configuration
 
@@ -12,7 +12,7 @@ Once started, instances will be largely in charge of their own lifecycle.  The r
 
 Scale-in protection will be enabled in the Auto Scaling group to prevent instances in use from being terminated by the Auto Scaling group.
 
-This prevents the scenario where multiple jobs are running in different instances, completing out of the order they were submitted, reducing the queue depth, and having the Auto Scaling group subsequently terminate the oldest instance to match the new smaller queue - even if a job is still running on it.
+This prevents the scenario where multiple jobs are running in different instances, completing out of the order they were submitted, reducing the number of unclaimed tasks, and having the Auto Scaling group subsequently terminate the oldest instance to match the new unclaimed task count - even if a job is still running on it.
 
 ## Step 1: Preparing the runner installation script
 
@@ -84,7 +84,7 @@ Leave everything as it is.
 
 Set `Desired capacity`, `Minimum capacity`, and `Maximum capacity` to `0` - our Lambda function will update these values to match our scaling requirements later.
 
-Check `Enable scale-in protection` - This will protect instances in use from being terminated prematurely as the number of queued tasks decreases as discussed above.
+Check `Enable scale-in protection` - This will protect instances in use from being terminated prematurely as the number of unclaimed tasks decreases as discussed above.
 
 Leave everything else as it is.
 
