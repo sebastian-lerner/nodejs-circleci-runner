@@ -81,8 +81,7 @@ chown -R "$USERNAME" "$prefix/workdir"
 
 #-------------------------------------------------------------------------------
 # Create the service
-# The service will shut down the system when it exits - that is, the runner has completed with a success or error
-# If something goes wrong with the job, it's really not an issue if it quits and a new instance is launched for the next job - it may even be preferred
+# The service will shut down the instance when it exits - that is, the runner has completed with a success or error
 #-------------------------------------------------------------------------------
 
 cat << EOF >$SERVICE_PATH
