@@ -50,10 +50,19 @@ def lambda_handler(event, context):
     # Get result from API endpoint
     result = get_request(endpoint_url, headers)
 
-    # Update the auto scaling group with a desired number of instances set to the number of unclaimed tasks, or the maximum, whichever is smallest
+    # Configure Runner API endpoint https://circleci.com/docs/2.0/runner-api/#endpoints
+    endpoint_url = 'https://runner.circleci.com/api/v2/tasks/running?resource-class=' + secrets['resource_class']
+    headers = {'Circle-Token': secrets['circle_token']}
+
+    # Get result from API endpoint
+    result_running = get_request(endpoint_url, headers)
+
+    total_desired = int(result["unclaimed_task_count"]) + int(result_running["running_runner_tasks"]) 
+
+    # Update the auto scaling group with a desired number of instances set to  the number of jobs in the queue, or the maximum, whichever is smallest
     instances_min = 0
     instances_max = int(auto_scaling_max)
-    instances_desired = int(result["unclaimed_task_count"]) if int(result["unclaimed_task_count"]) < int(auto_scaling_max) else int(auto_scaling_max)
+    instances_desired = min(total_desired, int(auto_scaling_max))
     # Set the Auto Scaling group configuration
     client = boto3.client('autoscaling', region_name=auto_scaling_group_region)
     client.update_auto_scaling_group(
