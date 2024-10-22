@@ -14,7 +14,7 @@
 platform="linux/amd64"                                  # Runner platform: linux/amd64 || linux/arm64 || platform=darwin/amd64 
 prefix="/opt/circleci"                                  # Runner install directory    
 
-CONFIG_PATH="/opt/circleci/launch-agent-config.yaml"    # Determines where Runner config will be stored
+CONFIG_PATH="/opt/circleci-runner/circleci-runner-config.yaml"    # Determines where Runner config will be stored
 SERVICE_PATH="/opt/circleci/circleci.service"           # Determines where the Runner service definition will be stored
 TIMESTAMP=$(date +"%g%m%d-%H%M%S-%3N")                  # Used to avoid Runner naming collisions
 
@@ -35,18 +35,18 @@ apt install coreutils curl tar gzip -y
 #-------------------------------------------------------------------------------
 
 mkdir -p "$prefix/workdir"
-base_url="https://circleci-binary-releases.s3.amazonaws.com/circleci-launch-agent"
-echo "Determining latest version of CircleCI Launch Agent"
+base_url="https://circleci-binary-releases.s3.amazonaws.com/circleci-runner"
+echo "Determining latest version of CircleCI self-hosted runner"
 agent_version=$(curl "$base_url/release.txt")
-echo "Using CircleCI Launch Agent version $agent_version"
-echo "Downloading and verifying CircleCI Launch Agent Binary"
+echo "Using CircleCI machine runner Agent version $agent_version"
+echo "Downloading and verifying CircleCI machine runner binary"
 curl -sSL "$base_url/$agent_version/checksums.txt" -o checksums.txt
 file="$(grep -F "$platform" checksums.txt | cut -d ' ' -f 2 | sed 's/^.//')"
 mkdir -p "$platform"
-echo "Downloading CircleCI Launch Agent: $file"
+echo "Downloading CircleCI machine runner: $file"
 curl --compressed -L "$base_url/$agent_version/$file" -o "$file"
-echo "Verifying CircleCI Launch Agent download"
-grep "$file" checksums.txt | sha256sum --check && chmod +x "$file"; cp "$file" "$prefix/circleci-launch-agent" || echo "Invalid checksum for CircleCI Launch Agent, please try download again"
+echo "Verifying CircleCI machine runner download"
+grep "$file" checksums.txt | sha256sum --check && chmod +x "$file"; cp "$file" "$prefix/circleci-runner" || echo "Invalid checksum for CircleCI machine runner, please try download again"
 
 #-------------------------------------------------------------------------------
 # Install the CircleCI runner configuration
@@ -68,8 +68,8 @@ runner:
 EOF
 
 # Set correct config file permissions and ownership
-chown root: /opt/circleci/launch-agent-config.yaml
-chmod 600 /opt/circleci/launch-agent-config.yaml
+chown root: /opt/circleci-runner/circleci-runner-config.yaml
+chmod 600 /opt/circleci-runner/circleci-runner-config.yaml
 
 #-------------------------------------------------------------------------------
 # Create the circleci user & give permissions to working directory 
@@ -89,7 +89,7 @@ cat << EOF >$SERVICE_PATH
 Description=CircleCI Runner
 After=network.target
 [Service]
-ExecStart=$prefix/circleci-launch-agent --config $CONFIG_PATH
+ExecStart=$prefix/circleci-runner --config $CONFIG_PATH
 ExecStopPost=shutdown now -h
 Restart=no
 User=root
